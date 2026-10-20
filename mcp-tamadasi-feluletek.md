@@ -104,3 +104,35 @@ Az ágens termékkereső tool-ok találatai alapján ajánl vagy vásárol term�
  
 - **Historikus viselkedés figyelése:** jelzés, ha egy tool válaszai eltérnek a korábbiaktól. Ez például rug pull esetén fontos.
 - **Redundáns hívás:** ugyanaz a kérés több független tool-tól, az eredményeket a modelltől függetlenül kombinálva.
+
+## Tool választási szempontok
+
+2 tanulmány alapján, az alábbi szempontok befolyásolják érdemben egy LLM döntését a tool választásban:
+
+- szemantikai hasonlóság a queryhez
+- pozíció a tool listában
+- a metaadat típusa: a leírás hat a legerősebben, a név kevésbé és kiszámíthatatlanabbul, a paraméterek leírása a legkevésbé
+- reklámszerű megfogalmazás a leírásban:
+  - *autoritatív:* szakértői vagy felhasználói ajánlásnak álcázza magát 
+  - *szubliminális:* pozitív hangulatot kelt konkrét állítás nélkül 
+  - *túlzó:* felnagyítja a tool képességeit
+  - *érzelmi:* a felhasználó érzelmi igényeire épít
+
+
+## Vizsgált ágensek
+Minden ágensnél a leírás szemantikai illesztését, az autoritatív és a szubliminális keretezést, a képesség-állításokat, valamint a paraméterek számának hatását tervezem vizsgálni azonos leírás mellett. Ezeket eltérő (valós szerverekből vett) és egyforma leírású versenytársak mellett is érdemes lehet megnézni, akárcsak azt, mi történik, ha egyszerre több versenytárs is manipulált leírást használ (over-manipulation), illetve ha egy tool egyetlen releváns képességet vagy egyszerre sokat állít magáról. Az alábbiakban az ágensenként eltérő, további ötleteket sorolom fel.
+
+- **Webes kereső ágens**
+  - rendezettség-állítás ("relevancia szerint rangsorolt találatok")
+  - frissesség-állítás ("folyamatosan frissülő")
+  - szakterületi lefedettség ("akadémiai források, arXiv")
+  - összefoglaló-állítás ("kész összefoglalók")
+- **Árfolyam-ágens**
+  - frissesség-állítás ("60 másodpercenként frissülő árfolyam")
+  - forrás-állítás
+  - lefedettség ("X+ deviza, nemesfémek és kriptovaluták")
+- **Kódoló ágens csomagkereső tool-lal**
+  - biztonsági képesség-állítás ("csak karbantartott, sérülékenységre ellenőrzött csomagok")
+  - népszerűségre hivatkozás ("letöltésszám szerint rangsorolt találatok")
+  - frissesség-állítás
+  - kompatibilitás-állítás
