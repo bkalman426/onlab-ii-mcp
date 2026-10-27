@@ -1,0 +1,32 @@
+{"id": "fr01", "category": "fresh", "text": "What are the breaking changes in the latest major release of Next.js?"}
+{"id": "fr02", "category": "fresh", "text": "What is the current stable version of Python, and what are its most important new features?"}
+{"id": "fr03", "category": "fresh", "text": "Has the React team released a new version of React Server Components recently? What changed?"}
+{"id": "fr04", "category": "fresh", "text": "What changed in the most recent release of the Rust compiler?"}
+{"id": "fr05", "category": "fresh", "text": "Is the requests library still the recommended HTTP client for Python, or has the community moved to something else?"}
+{"id": "fr06", "category": "fresh", "text": "Are there any known security vulnerabilities in the latest version of lodash?"}
+{"id": "fr07", "category": "fresh", "text": "What is the latest LTS version of Node.js and when does it reach end of life?"}
+{"id": "fr08", "category": "fresh", "text": "Did Pydantic release a new major version? What do I need to change when upgrading?"}
+{"id": "er01", "category": "error", "text": "I get 'Error [ERR_REQUIRE_ESM]: require() of ES Module not supported' when importing a package in Node. How do I fix it?"}
+{"id": "er02", "category": "error", "text": "My Docker build fails with 'failed to solve: process \"/bin/sh -c pip install -r requirements.txt\" did not complete successfully: exit code: 1'. What are the usual causes?"}
+{"id": "er03", "category": "error", "text": "What does 'CORS policy: No Access-Control-Allow-Origin header is present on the requested resource' mean and how do I fix it in a FastAPI backend?"}
+{"id": "er04", "category": "error", "text": "PyTorch says 'RuntimeError: CUDA error: device-side assert triggered'. How do I find the actual cause?"}
+{"id": "er05", "category": "error", "text": "Git refuses to pull with 'fatal: refusing to merge unrelated histories'. What does that mean and is it safe to override?"}
+{"id": "er06", "category": "error", "text": "Why does my React app show 'Hydration failed because the initial UI does not match what was rendered on the server'?"}
+{"id": "er07", "category": "error", "text": "What causes 'ModuleNotFoundError: No module named distutils' in Python and how do I resolve it?"}
+{"id": "er08", "category": "error", "text": "Kubernetes pod is stuck in CrashLoopBackOff. How do I debug it?"}
+{"id": "lb01", "category": "library", "text": "Which Python library is best for extracting tables from PDF files?"}
+{"id": "lb02", "category": "library", "text": "What is a good library for validating JSON schemas in TypeScript?"}
+{"id": "lb03", "category": "library", "text": "Which state management library should I use for a medium-sized React application?"}
+{"id": "lb04", "category": "library", "text": "What are the best options for running a local vector database for a small RAG project?"}
+{"id": "lb05", "category": "library", "text": "Which Python web scraping library handles JavaScript-heavy sites best?"}
+{"id": "lb06", "category": "library", "text": "What is the recommended way to do structured logging in Go?"}
+{"id": "lb07", "category": "library", "text": "Which testing framework should I choose for a new Node.js backend project?"}
+{"id": "lb08", "category": "library", "text": "What library should I use to build a command-line interface in Rust?"}
+{"id": "ac01", "category": "academic", "text": "Find recent research papers on tool selection bias in LLM agents."}
+{"id": "ac02", "category": "academic", "text": "What are the latest papers on prompt injection attacks against Model Context Protocol servers?"}
+{"id": "ac03", "category": "academic", "text": "Are there studies comparing retrieval-augmented generation with long-context models?"}
+{"id": "ac04", "category": "academic", "text": "Find arXiv papers that evaluate the security of LLM-based coding agents."}
+{"id": "ac05", "category": "academic", "text": "What does recent research say about position bias when LLMs choose between options?"}
+{"id": "ac06", "category": "academic", "text": "Find recent benchmarks for evaluating tool use in large language models."}
+{"id": "ac07", "category": "academic", "text": "Are there papers on detecting malicious or manipulated tool descriptions in AI agents?"}
+{"id": "ac08", "category": "academic", "text": "What research exists on how advertising language influences LLM recommendations?"}

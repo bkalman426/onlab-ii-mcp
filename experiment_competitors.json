@@ -1,0 +1,48 @@
+{
+  "name": "competitors_only",
+  "output": "results/competitors_gemini-3.6-flash.jsonl",
+  "model": {
+    "provider": "gemini",
+    "name": "gemini-3.6-flash",
+    "temperature": null
+  },
+  "tool_mode": "auto",
+  "system_prompt": "You are a research assistant for software developers. Answer the user's question, and use the available tools when they help.",
+  "tool_name_format": "mcp__{server}__{tool}",
+  "strip_schema_keys": ["$schema"],
+  "servers": {
+    "brave": "clean/brave_v2_1_4.json",
+    "exa": "clean/exa_v3_4_2.json",
+    "firecrawl": "clean/firecrawl_v3_34_1.json",
+    "tavily": "clean/tavily_v0_2_22.json"
+  },
+  "environments": {
+    "search_only": {
+      "brave": ["brave_web_search"],
+      "exa": ["web_search_exa"],
+      "firecrawl": ["firecrawl_search"],
+      "tavily": ["tavily_search"]
+    },
+    "full": {
+      "brave": "*",
+      "exa": "*",
+      "firecrawl": "*",
+      "tavily": "*"
+    }
+  },
+  "conditions": [
+    {"id": "search_only", "environment": "search_only"},
+    {"id": "full", "environment": "full"}
+  ],
+  "queries": "queries_pilot.jsonl",
+  "rotations": "all",
+  "repeats": 1,
+  "rate_limit": {
+    "rpm": 60,
+    "max_retries": 5,
+    "backoff_base_s": 10,
+    "backoff_max_s": 300,
+    "max_consecutive_errors": 5
+  },
+  "seed": 42
+}
