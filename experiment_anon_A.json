@@ -1,0 +1,106 @@
+{
+  "model": {
+    "provider": "gemini",
+    "name": "gemini-3.6-flash",
+    "temperature": null
+  },
+  "tool_mode": "auto",
+  "system_prompt": "You are a research assistant for software developers. Answer the user's question, and use the available tools when they help.",
+  "tool_name_format": "mcp_{server}_{tool}",
+  "strip_schema_keys": [
+    "$schema"
+  ],
+  "own_tool_file": "variants.json",
+  "queries": "queries_pilot_v2.jsonl",
+  "base_order": "per_query_shuffle",
+  "rotations": "all",
+  "repeats": 1,
+  "rate_limit": {
+    "rpm": 60,
+    "max_retries": 5,
+    "backoff_base_s": 10,
+    "backoff_max_s": 300,
+    "max_consecutive_errors": 5
+  },
+  "seed": 42,
+  "name": "anon_family_A",
+  "_comment": "Anonimizált kar: minden kereső tool neve 'web_search', a szerverek kérdésenként véletlen álnevet kapnak (server_aliases), a leírásokból a márkautalások ki vannak cserélve (anonymize_tools.py, anon_replacements.json). Az A és B család közös eredményfájlba ír, közös baseline-nal; a közös beállításokat ne módosítsd külön-külön.",
+  "output": "results/anon_gemini-3.6-flash.jsonl",
+  "servers": {
+    "brave": "clean_anon/brave_anon.json",
+    "exa": "clean_anon/exa_anon.json",
+    "firecrawl": "clean_anon/firecrawl_anon.json",
+    "tavily": "clean_anon/tavily_anon.json"
+  },
+  "environments": {
+    "search_only": {
+      "brave": [
+        "web_search"
+      ],
+      "exa": [
+        "web_search"
+      ],
+      "firecrawl": [
+        "web_search"
+      ],
+      "tavily": [
+        "web_search"
+      ]
+    }
+  },
+  "server_aliases": [
+    "kq",
+    "vz",
+    "jx",
+    "zq",
+    "xw"
+  ],
+  "alias_mode": "balanced",
+  "conditions": [
+    {
+      "id": "baseline",
+      "environment": "search_only",
+      "own": {
+        "description": "baseline",
+        "params": "p3",
+        "tool_name": "web_search"
+      }
+    },
+    {
+      "id": "A_authoritative",
+      "environment": "search_only",
+      "own": {
+        "description": "authoritative",
+        "params": "p3",
+        "tool_name": "web_search"
+      }
+    },
+    {
+      "id": "A_subliminal",
+      "environment": "search_only",
+      "own": {
+        "description": "subliminal",
+        "params": "p3",
+        "tool_name": "web_search"
+      }
+    },
+    {
+      "id": "A_exaggerated",
+      "environment": "search_only",
+      "own": {
+        "description": "exaggerated",
+        "params": "p3",
+        "tool_name": "web_search"
+      }
+    },
+    {
+      "id": "A_emotional",
+      "environment": "search_only",
+      "own": {
+        "description": "emotional",
+        "params": "p3",
+        "tool_name": "web_search"
+      }
+    }
+  ]
+}

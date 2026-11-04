@@ -75,8 +75,16 @@ def own_tool_def(variants, own_spec):
         raise SystemExit(f"Ismeretlen leírásváltozat: {own_spec['description']}")
     if own_spec["params"] not in variants["param_sets"]:
         raise SystemExit(f"Ismeretlen paraméterkészlet: {own_spec['params']}")
-    return {"name": variants["tool_name"], "description": v["description"],
+    # A tool neve feltételenként felülírható ("tool_name"), pl. a név hatásának vizsgálatához.
+    return {"name": own_spec.get("tool_name", variants["tool_name"]), "description": v["description"],
             "inputSchema": variants["param_sets"][own_spec["params"]]}
+
+
+def own_server_name(variants, own_spec):
+    """A saját szerver neve; feltételenként felülírható ("server_name")."""
+    if not own_spec or variants is None:
+        return None
+    return own_spec.get("server_name", variants["server_name"])
 
 
 def build_blocks(cfg, servers, variants, condition):
@@ -99,7 +107,10 @@ def build_blocks(cfg, servers, variants, condition):
         if variants is None:
             raise SystemExit(f"A(z) '{condition['id']}' feltétel saját tool-t kér, "
                              f"de a konfigurációban nincs 'own_tool_file'.")
-        blocks.append((variants["server_name"], [own_tool_def(variants, condition["own"])]))
+        own_srv = own_server_name(variants, condition["own"])
+        if own_srv in servers:
+            raise SystemExit(f"A saját szerver neve ({own_srv}) ütközik egy versenytárséval.")
+        blocks.append((own_srv, [own_tool_def(variants, condition["own"])]))
     return blocks
 
 
@@ -110,12 +121,48 @@ def rotation_offsets(n_blocks, spec):
     return sorted({round(i * n_blocks / k) % n_blocks for i in range(k)})
 
 
-def flatten(blocks, offset, name_fmt, strip):
+def alias_map_for_query(blocks, cfg, query_index, own_srv=None):
+    """Kérdésenként változó álnév-kiosztás a szerverekhez.
+
+    Ha a konfigurációban van 'server_aliases', a modell a tool-neveket az álnévvel látja
+    (pl. mcp_kq_web_search), a naplóban viszont a valódi szervernév marad.
+
+    alias_mode:
+    - "balanced" (alapértelmezés): az álnevek egy rögzített, kevert sorrendje kérdésről
+      kérdésre eggyel elfordul, így minden szerver minden álnevet közel ugyanannyiszor
+      kap (32 kérdés, 5 álnév: 6 vagy 7-szer). Egy álnév esetleges hatása így kiátlagolódik.
+    - "fixed": minden kérdésnél ugyanaz a kiosztás.
+    A kiosztás csak a kérdéstől függ, ezért ugyanannál a kérdésnél minden feltétel ugyanazt
+    kapja (a saját szerver a nevétől függetlenül mindig ugyanazt a helyet foglalja el).
+    """
+    aliases = cfg.get("server_aliases")
+    if not aliases:
+        return {}
+    names = sorted((n for n, _ in blocks), key=lambda n: "￿" if n == own_srv else n)
+    if len(aliases) < len(names):
+        raise SystemExit(f"Kevés álnév: {len(aliases)} van, {len(names)} szerverhez kellene.")
+    pool = list(aliases[:len(names)])
+    random.Random(f"{cfg.get('seed', 0)}|alias").shuffle(pool)
+    mode = cfg.get("alias_mode", "balanced")
+    if mode == "balanced":
+        k = query_index % len(pool)
+        pool = pool[k:] + pool[:k]
+    elif mode != "fixed":
+        raise SystemExit(f"Ismeretlen alias_mode: {mode} (lehetséges: balanced, fixed)")
+    return dict(zip(names, pool))
+
+
+def flatten(blocks, offset, name_fmt, strip, aliases=None):
     rotated = blocks[offset:] + blocks[:offset]
     tools, name_map = [], {}
+    aliases = aliases or {}
     for server, tlist in rotated:
         for t in tlist:
-            full = name_fmt.format(server=server, tool=t["name"])
+            full = name_fmt.format(server=aliases.get(server, server), tool=t["name"])
+            if full in name_map:
+                # Pl. "{tool}" formátumnál két szervernek is lehet azonos nevű tool-ja.
+                raise SystemExit(f"Ütköző tool-név: {full} ({name_map[full][0]} és {server}). "
+                                 f"Használj szervernevet is tartalmazó tool_name_format-ot.")
             name_map[full] = (server, t["name"])
             tools.append({"name": full,
                           "description": t.get("description") or "",
@@ -236,27 +283,62 @@ RETRYABLE = {429, 500, 502, 503, 504, 529}
 # Futtatás
 # ---------------------------------------------------------------------------
 
+def base_order_for_query(blocks, mode, seed, query_id, own_srv=None):
+    """A blokkok alapsorrendje egy adott kérdéshez, a rotáció előtt.
+
+    - "fixed": mindig a konfiguráció szerinti sorrend (az eredeti viselkedés).
+      Ilyenkor a szomszédok összekapcsolódnak: pl. X után mindig Y jön.
+    - "per_query_shuffle": kérdésenként más, véletlenszerű (de a seed és a kérdés
+      azonosítója alapján reprodukálható) alapsorrend. A rotáció ezen belül továbbra
+      is minden blokkot minden pozícióba eljuttat, de a szomszédok kérdésről kérdésre
+      változnak. Mivel a keverés a blokkok NEVEI szerint történik, két feltétel
+      ugyanazon kérdésnél ugyanazt a sorrendet kapja (párosított összehasonlítás).
+    """
+    if mode == "fixed":
+        return blocks
+    if mode != "per_query_shuffle":
+        raise SystemExit(f"Ismeretlen base_order: {mode} (lehetséges: fixed, per_query_shuffle)")
+    rng = random.Random(f"{seed}|{query_id}")
+    # A saját szerver a keveréskor mindig ugyanazt a (rendezés szerinti utolsó) helyet
+    # kapja, a nevétől függetlenül: így eltérő nevű saját tool-lal is ugyanaz a sorrend
+    # jön ki, mint a baseline-nál, és a párosítás megmarad.
+    def sort_key(name):
+        return "￿" if name == own_srv else name
+    names = sorted((name for name, _ in blocks), key=sort_key)
+    rng.shuffle(names)
+    by_name = dict(blocks)
+    return [(n, by_name[n]) for n in names]
+
+
 def plan_runs(cfg, servers, variants, queries, model_name):
     runs = []
+    mode = cfg.get("base_order", "fixed")
+    suffix = "" if mode == "fixed" else f"|{mode}"
     for cond in cfg["conditions"]:
         blocks = build_blocks(cfg, servers, variants, cond)
         for offset in rotation_offsets(len(blocks), cfg.get("rotations", "all")):
-            for q in queries:
+            for qi, q in enumerate(queries):
+                own_srv = own_server_name(variants, cond.get("own"))
+                qblocks = base_order_for_query(blocks, mode, cfg.get("seed", 0), q["id"], own_srv)
+                aliases = alias_map_for_query(blocks, cfg, qi, own_srv)
                 for rep in range(cfg.get("repeats", 1)):
-                    key = f"{model_name}|{cond['id']}|{q['id']}|rot{offset}|rep{rep}"
-                    runs.append({"key": key, "condition": cond, "blocks": blocks,
+                    key = f"{model_name}|{cond['id']}|{q['id']}|rot{offset}|rep{rep}{suffix}"
+                    runs.append({"key": key, "condition": cond, "blocks": qblocks, "aliases": aliases,
                                  "offset": offset, "query": q, "repeat": rep})
     return runs
 
 
 def estimate_tokens(cfg, run):
-    _, tools, _ = flatten(run["blocks"], run["offset"], cfg["tool_name_format"], cfg.get("strip_schema_keys", []))
+    _, tools, _ = flatten(run["blocks"], run["offset"], cfg["tool_name_format"], cfg.get("strip_schema_keys", []),
+                          run.get("aliases"))
     chars = len(json.dumps(tools, ensure_ascii=False)) + len(cfg["system_prompt"]) + len(run["query"]["text"])
     return chars // 4
 
 
 def write_manifest(cfg, cfg_path, servers, variants, out_path):
-    manifest_path = out_path.with_suffix(".manifest.json")
+    # Konfigurációnként külön manifest: több konfiguráció (pl. A és B család) írhat
+    # ugyanabba az eredményfájlba, és mindegyik beállításai megmaradnak.
+    manifest_path = out_path.with_name(f"{out_path.stem}.{cfg.get('name', 'run')}.manifest.json")
     if manifest_path.exists():
         return
     manifest = {
@@ -296,7 +378,14 @@ def main():
     servers = load_servers(cfg, base)
     # A saját tool opcionális: ha nincs 'own_tool_file', csak a versenytársakkal fut.
     variants = load_json(base / cfg["own_tool_file"]) if cfg.get("own_tool_file") else None
-    queries = load_jsonl(base / cfg["queries"])
+    queries_path = base / cfg["queries"]
+    if not queries_path.exists():
+        raise SystemExit(f"Nem található a kérdésfájl: {queries_path}")
+    queries = load_jsonl(queries_path)
+    if not queries:
+        raise SystemExit(f"A kérdésfájl üres: {queries_path}")
+    if not cfg["conditions"]:
+        raise SystemExit("A konfigurációban nincs egyetlen feltétel sem ('conditions').")
     mcfg = cfg["model"]
     runs = plan_runs(cfg, servers, variants, queries, mcfg["name"])
 
@@ -309,7 +398,9 @@ def main():
     # így nem egy-egy feltételre esnek. A seed miatt a sorrend reprodukálható.
     random.Random(cfg.get("seed", 0)).shuffle(todo)
 
-    print(f"Tervezett mérések: {len(runs)}  |  kész: {len(done)}  |  hátravan: {len(todo)}")
+    # A "kész" csak az ehhez a konfigurációhoz tartozó méréseket számolja
+    # (egy közös eredményfájlban más konfigurációk eredményei is lehetnek).
+    print(f"Tervezett mérések: {len(runs)}  |  kész: {len(runs) - len(todo)}  |  hátravan: {len(todo)}")
     per_cond = {}
     for r in runs:
         c = per_cond.setdefault(r["condition"]["id"], {"runs": 0, "tokens": 0, "n_tools": 0})
@@ -321,7 +412,7 @@ def main():
     total = sum(estimate_tokens(cfg, r) for r in todo)
     print(f"Becsült input token a hátralévő mérésekre: ~{total:,} (karakter/4 alapon, tájékoztató jellegű)")
     rl = cfg.get("rate_limit", {})
-    rpm = rl.get("rpm", 60)
+    rpm = rl.get("rpm", 5)
     print(f"Becsült időtartam {rpm} kérés/perc mellett: ~{len(todo) / rpm:.0f} perc")
     if args.dry_run:
         return
@@ -344,8 +435,9 @@ def main():
         for run in todo:
             if args.limit is not None and n_done >= args.limit:
                 break
-            rotated, tools, name_map = flatten(run["blocks"], run["offset"], cfg["tool_name_format"], strip)
-            own_server = variants["server_name"] if (variants and run["condition"].get("own")) else None
+            rotated, tools, name_map = flatten(run["blocks"], run["offset"], cfg["tool_name_format"], strip,
+                                               run.get("aliases"))
+            own_server = own_server_name(variants, run["condition"].get("own"))
             block_order = [s for s, _ in rotated]
 
             result, error, error_code, latency = None, None, None, None
@@ -386,12 +478,17 @@ def main():
                 "environment": run["condition"]["environment"],
                 "own_description": (run["condition"].get("own") or {}).get("description"),
                 "own_params": (run["condition"].get("own") or {}).get("params"),
+                "own_server": own_server,
+                "own_tool_name": next((t["name"] for s, tl in rotated if s == own_server for t in tl), None)
+                if own_server else None,
                 "query_id": run["query"]["id"],
                 "category": run["query"].get("category"),
                 "query": run["query"]["text"],
                 "rotation": run["offset"],
+                "base_order_mode": cfg.get("base_order", "fixed"),
                 "repeat": run["repeat"],
                 "block_order": block_order,
+                "aliases": run.get("aliases") or None,
                 "own_block_position": block_order.index(own_server) if own_server else None,
                 "tool_order": [t["name"] for t in tools],
                 "n_tools": len(tools),

@@ -1,0 +1,54 @@
+{
+  "_comment": [
+    "Az anonimizálás csere-táblázata. Csak a márkára és a szolgáltatóra utaló részeket cseréli;",
+    "a képesség-állításokat, a leírások szerkezetét és a paramétereket érintetlenül hagyja.",
+    "A cserék sorrendben, pontos szövegegyezéssel futnak (először a hosszabb kifejezések).",
+    "A végén a szkript ellenőrzi, hogy a 'forbidden_patterns' egyike sem maradt a kimenetben."
+  ],
+  "tools": {
+    "brave": {"source": "clean/brave_v2_1_4.json", "tool": "brave_web_search"},
+    "exa": {"source": "clean/exa_v3_4_2.json", "tool": "web_search_exa"},
+    "firecrawl": {"source": "clean/firecrawl_v3_34_1.json", "tool": "firecrawl_search"},
+    "tavily": {"source": "clean/tavily_v0_2_22.json", "tool": "tavily_search"}
+  },
+  "new_tool_name": "web_search",
+  "property_renames": {
+    "brave": {"goggles": "rerank_rules"}
+  },
+  "text_replacements": {
+    "brave": [
+      ["using the Brave Search API", "using a web search API"],
+      [" For more details, refer to the Goggles repository (i.e., https://github.com/brave/goggles-quickstart).", ""],
+      ["Goggles act as a custom re-ranking on top of Brave's search index.", "Re-ranking rules act as a custom re-ranking on top of the search index."],
+      ["where the Goggle is hosted or the definition of the Goggle.", "where the rule is hosted or the definition of the rule."],
+      ["Multiple goggle URLs", "Multiple rule URLs"]
+    ],
+    "exa": [
+      ["web_fetch_exa", "web_fetch"]
+    ],
+    "firecrawl": [
+      ["`firecrawl_scrape`", "`scrape`"],
+      ["firecrawl_scrape", "scrape"],
+      ["`firecrawl_find_tools`", "`find_tools`"],
+      ["firecrawl_find_tools", "find_tools"],
+      ["`firecrawl_gov_search`", "`gov_search`"],
+      ["firecrawl_gov_search", "gov_search"],
+      ["`firecrawl_research_*`", "`research_*`"],
+      ["matching Alexandria data providers", "matching data providers"],
+      ["always add alexandria to the sources", "always add providers to the sources"],
+      ["with an `alexandria` body", "with a `providers` body"],
+      ["no Alexandria matches", "no provider matches"],
+      ["when Alexandria is combined", "when providers are combined"],
+      ["web + alexandria", "web + providers"],
+      ["Use [\"alexandria\"] alone", "Use [\"providers\"] alone"],
+      ["never Alexandria provider tools", "never provider tools"]
+    ],
+    "tavily": [
+      ["See https://docs.tavily.com/documentation/api-reference/search for the full list of supported countries.", "See the API documentation for the full list of supported countries."]
+    ]
+  },
+  "enum_replacements": {
+    "firecrawl": {"alexandria": "providers"}
+  },
+  "forbidden_patterns": ["brave", "\\bexa\\b", "_exa", "exa_", "firecrawl", "tavily", "alexandria", "goggle"]
+}

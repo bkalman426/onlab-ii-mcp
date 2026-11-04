@@ -7,13 +7,13 @@
 {"id": "fr07", "category": "fresh", "text": "What is the latest LTS version of Node.js and when does it reach end of life?"}
 {"id": "fr08", "category": "fresh", "text": "Did Pydantic release a new major version? What do I need to change when upgrading?"}
 {"id": "er01", "category": "error", "text": "I get 'Error [ERR_REQUIRE_ESM]: require() of ES Module not supported' when importing a package in Node. How do I fix it?"}
-{"id": "er02", "category": "error", "text": "My Docker build fails with 'failed to solve: process \"/bin/sh -c pip install -r requirements.txt\" did not complete successfully: exit code: 1'. What are the usual causes?"}
-{"id": "er03", "category": "error", "text": "What does 'CORS policy: No Access-Control-Allow-Origin header is present on the requested resource' mean and how do I fix it in a FastAPI backend?"}
+{"id": "er09", "category": "error", "text": "After upgrading to the latest version of uv, 'uv sync' fails with 'error: Failed to build' for a package that installed fine before, but only on Python 3.14. What is the usual cause and fix?"}
+{"id": "er10", "category": "error", "text": "After migrating to Tailwind CSS v4, my build fails with 'Cannot apply unknown utility class'. What changed and how do I fix it?"}
 {"id": "er04", "category": "error", "text": "PyTorch says 'RuntimeError: CUDA error: device-side assert triggered'. How do I find the actual cause?"}
-{"id": "er05", "category": "error", "text": "Git refuses to pull with 'fatal: refusing to merge unrelated histories'. What does that mean and is it safe to override?"}
+{"id": "er11", "category": "error", "text": "After upgrading Bun, my CI fails with 'error: lockfile had changes, but lockfile is frozen'. What changed in the latest Bun release and how do I fix the pipeline?"}
 {"id": "er06", "category": "error", "text": "Why does my React app show 'Hydration failed because the initial UI does not match what was rendered on the server'?"}
 {"id": "er07", "category": "error", "text": "What causes 'ModuleNotFoundError: No module named distutils' in Python and how do I resolve it?"}
-{"id": "er08", "category": "error", "text": "Kubernetes pod is stuck in CrashLoopBackOff. How do I debug it?"}
+{"id": "er12", "category": "error", "text": "After upgrading to the newest major version of ESLint, it says 'ESLint couldn't find an eslint.config.(js|mjs|cjs) file'. How do I migrate my old .eslintrc setup?"}
 {"id": "lb01", "category": "library", "text": "Which Python library is best for extracting tables from PDF files?"}
 {"id": "lb02", "category": "library", "text": "What is a good library for validating JSON schemas in TypeScript?"}
 {"id": "lb03", "category": "library", "text": "Which state management library should I use for a medium-sized React application?"}

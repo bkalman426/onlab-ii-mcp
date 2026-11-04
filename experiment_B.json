@@ -1,0 +1,109 @@
+{
+  "name": "family_B",
+  "_comment": "A és B család közös eredményfájlba ír, közös 'baseline' feltétellel: a baseline csak egyszer fut le. Ehhez a két konfigurációban minden közös beállításnak (modell, prompt, kérdések, seed, névformátum, base_order) azonosnak kell maradnia.",
+  "output": "results/own_gemini-3.6-flash.jsonl",
+  "model": {
+    "provider": "gemini",
+    "name": "gemini-3.6-flash",
+    "temperature": null
+  },
+  "tool_mode": "auto",
+  "system_prompt": "You are a research assistant for software developers. Answer the user's question, and use the available tools when they help.",
+  "tool_name_format": "mcp_{server}_{tool}",
+  "strip_schema_keys": [
+    "$schema"
+  ],
+  "servers": {
+    "brave": "clean/brave_v2_1_4.json",
+    "exa": "clean/exa_v3_4_2.json",
+    "firecrawl": "clean/firecrawl_v3_34_1.json",
+    "tavily": "clean/tavily_v0_2_22.json"
+  },
+  "own_tool_file": "variants.json",
+  "environments": {
+    "search_only": {
+      "brave": [
+        "brave_web_search"
+      ],
+      "exa": [
+        "web_search_exa"
+      ],
+      "firecrawl": [
+        "firecrawl_search"
+      ],
+      "tavily": [
+        "tavily_search"
+      ]
+    }
+  },
+  "queries": "queries_pilot_v2.jsonl",
+  "base_order": "per_query_shuffle",
+  "rotations": "all",
+  "repeats": 1,
+  "rate_limit": {
+    "rpm": 60,
+    "max_retries": 5,
+    "backoff_base_s": 10,
+    "backoff_max_s": 300,
+    "max_consecutive_errors": 5
+  },
+  "seed": 42,
+  "conditions": [
+    {
+      "id": "baseline",
+      "environment": "search_only",
+      "own": {
+        "description": "baseline",
+        "params": "p3"
+      }
+    },
+    {
+      "id": "B_t_fresh",
+      "environment": "search_only",
+      "own": {
+        "description": "t_fresh",
+        "params": "p3"
+      }
+    },
+    {
+      "id": "B_t_error",
+      "environment": "search_only",
+      "own": {
+        "description": "t_error",
+        "params": "p3"
+      }
+    },
+    {
+      "id": "B_t_library",
+      "environment": "search_only",
+      "own": {
+        "description": "t_library",
+        "params": "p3"
+      }
+    },
+    {
+      "id": "B_t_academic",
+      "environment": "search_only",
+      "own": {
+        "description": "t_academic",
+        "params": "p3"
+      }
+    },
+    {
+      "id": "B_t_all",
+      "environment": "search_only",
+      "own": {
+        "description": "t_all",
+        "params": "p3"
+      }
+    },
+    {
+      "id": "B_cutoff_appeal",
+      "environment": "search_only",
+      "own": {
+        "description": "cutoff_appeal",
+        "params": "p3"
+      }
+    }
+  ]
+}
