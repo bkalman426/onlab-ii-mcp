@@ -8,7 +8,9 @@ Elkészülő ábrák (PNG, a megadott mappába):
   4_kulonbseg_baseline.png         Saját tool: különbség a baseline-hoz képest, 95%-os intervallummal
   5_kulonbseg_kategoria.png        Saját tool: különbség kérdéskategóriánként (eltérő színskála,
                                    a célzott kategóriák kiemelve)
-A 4. és 5. ábra csak akkor készül, ha van saját tool és 'baseline' feltétel.
+  6_ablacio.png                    Feature ablation: az egyes kifejezések hozzájárulása
+  7_celzott_vs_szeles.png          Célzott változat vs. t_all vs. baseline kérdéskategóriánként
+A 4–7. ábra csak akkor készül, ha van saját tool és 'baseline' feltétel.
 
 Színek: a szerverekhez rögzített szín tartozik (minden ábrán ugyanaz), a választás
 hiánya szürke. A paletta a dataviz-validátorral ellenőrzött; az alacsony kontrasztú
@@ -310,7 +312,8 @@ def _paired_stats(pairs):
 
 
 def plot_paired_overall(own, out_dir, baseline_id="baseline"):
-    conds = [c for c in _cond_order({r["condition"] for r in own}) if c != baseline_id]
+    conds = [c for c in _cond_order({r["condition"] for r in own})
+             if c != baseline_id and not c.startswith("ABL__")]
     stats = [(c, _paired_stats(_pairs(own, c, baseline_id))) for c in conds]
     stats = [(c, s) for c, s in stats if s]
     if not stats:
@@ -357,7 +360,8 @@ def plot_paired_overall(own, out_dir, baseline_id="baseline"):
 
 
 def plot_paired_by_category(own, out_dir, targets, baseline_id="baseline"):
-    conds = [c for c in _cond_order({r["condition"] for r in own}) if c != baseline_id]
+    conds = [c for c in _cond_order({r["condition"] for r in own})
+             if c != baseline_id and not c.startswith("ABL__")]
     cats = sorted({r["category"] for r in own})
     if not conds:
         return None
@@ -391,6 +395,139 @@ def plot_paired_by_category(own, out_dir, targets, baseline_id="baseline"):
     return _save(fig, out_dir, "5_kulonbseg_kategoria.png")
 
 
+# --- 6. Feature ablation -----------------------------------------------------------
+def plot_ablation(own, out_dir, labels):
+    """Az egyes kitakart részek hozzájárulása: szülő − kitakart, párosítva, 95%-os intervallummal."""
+    conds = sorted({r["condition"] for r in own if r["condition"].startswith("ABL__")})
+    if not conds:
+        return None
+
+    def key(r):
+        return (r["model"], r["query_id"], r["rotation"], r["repeat"])
+
+    items = []
+    for cond in conds:
+        _, parent, feat = cond.split("__")
+        par = {key(r): r["selected_own"] for r in own if r["condition"] == parent}
+        # (kitakart, szülő) sorrend: a _paired_stats "változat − viszonyítás" különbséget számol,
+        # itt viszont a hozzájárulás kell (szülő − kitakart), ezért fordítva adjuk át.
+        pairs = [(par[key(r)], r["selected_own"]) for r in own if r["condition"] == cond and key(r) in par]
+        s = _paired_stats(pairs)
+        if s:
+            desc = next((r["own_description"] for r in own if r["condition"] == cond), None)
+            items.append((parent, feat, labels.get(desc, feat), s))
+    if not items:
+        return None
+
+    fig, ax = plt.subplots(figsize=(9, 0.48 * len(items) + 1.9))
+    lim = max(0.05, max(max(abs(s["lo"]), abs(s["hi"])) for *_, s in items)) * 1.3
+    ylabels, fams, prev = [], [], None
+    y = 0
+    for parent, feat, label, s in items:
+        if prev is not None and parent != prev:
+            y += 0.5  # kis térköz a szülők között
+        fam = _family(parent)
+        col = FAMILY_COLORS.get(fam, CATEGORICAL[0])
+        if fam and fam not in fams:
+            fams.append(fam)
+        ax.barh(y, s["delta"], height=0.5, color=col, zorder=3)
+        for xs, ys in (([s["lo"], s["hi"]], [y, y]), ([s["lo"]] * 2, [y - 0.12, y + 0.12]),
+                       ([s["hi"]] * 2, [y - 0.12, y + 0.12])):
+            ax.plot(xs, ys, color=INK_2, linewidth=1.2, solid_capstyle="butt", zorder=4)
+        sig = "*" if (s["p"] is not None and s["p"] < 0.05) else ""
+        x_txt = s["hi"] if s["delta"] >= 0 else s["lo"]
+        ax.text(x_txt + (0.012 if s["delta"] >= 0 else -0.012) * lim / 0.3, y, f"{100 * s['delta']:+.1f} pp{sig}",
+                va="center", ha="left" if s["delta"] >= 0 else "right", fontsize=8.5, color=INK)
+        ylabels.append((y, f"{_short(parent)}: {label}"))
+        prev = parent
+        y += 1
+    ax.axvline(0, color=AXIS, linewidth=1, zorder=2)
+    ax.set_xlim(-lim, lim)
+    ax.set_yticks([p for p, _ in ylabels], [t for _, t in ylabels])
+    ax.invert_yaxis()
+    ax.tick_params(axis="y", length=0)
+    ax.spines["left"].set_visible(False)
+    ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(
+        lambda v, _: "0" if abs(v) < 1e-9 else f"{100 * v:+.0f} pp"))
+    ax.grid(axis="x", color=GRID, linewidth=0.8, zorder=0)
+    ax.set_xlabel("hozzájárulás: mennyivel ritkábban választja a saját tool-t, ha ez a rész hiányzik")
+    ax.set_title("Az egyes kifejezések hozzájárulása (feature ablation)", pad=26 if fams else 8)
+    if fams:
+        names = {"A": "A: reklámszöveg", "B": "B: célzott állítás"}
+        handles = [Rectangle((0, 0), 1, 1, color=FAMILY_COLORS[f]) for f in fams]
+        ax.legend(handles, [names.get(f, f) for f in fams], ncol=len(fams), frameon=False,
+                  loc="lower left", bbox_to_anchor=(0, 1.0, 1, 0.1), fontsize=8.5, handlelength=1, handleheight=1)
+    fig.text(0.01, -0.02, "Párosítva a teljes (szülő) változattal, ugyanazon kérdés és sorrend mellett. "
+             "Vonal: 95%-os intervallum.  * = p < 0,05 (McNemar, egzakt).", fontsize=8, color=MUTED,
+             transform=fig.transFigure)
+    return _save(fig, out_dir, "6_ablacio.png")
+
+
+# --- 7. Célzott vs. széles --------------------------------------------------------
+def plot_targeted_vs_broad(own, out_dir, targets, baseline_id="baseline", broad_target="all"):
+    """Kategóriánként a baseline, a kategóriát célzó B-változat, és a mindent egyszerre
+    állító változat (t_all) választási aránya. Megmutatja, hogy a célzás veri-e a
+    „mondj el mindent” stratégiát."""
+    cats = sorted({r["category"] for r in own})
+    cond_target, cond_id = {}, {}
+    for r in own:
+        cond_target.setdefault(r["condition"], targets.get(r["own_description"]))
+        cond_id.setdefault(r["condition"], r["own_description"])
+    broad = next((c for c, t in cond_target.items() if t == broad_target), None)
+
+    def targeted_for(cat):
+        cands = [c for c, t in cond_target.items() if t == cat]
+        cands.sort(key=lambda c: (not cond_id[c].startswith("t_"), c))
+        return cands[0] if cands else None
+
+    def rate(cond, cat):
+        rs = [r for r in own if cond and r["condition"] == cond and r["category"] == cat]
+        return (sum(r["selected_own"] for r in rs) / len(rs)) if rs else None
+
+    tgt_by_cat = {cat: targeted_for(cat) for cat in cats}
+    if broad is None or not any(tgt_by_cat.values()):
+        return None
+
+    series = [("baseline", NONE_COLOR), ("célzott változat", CATEGORICAL[1]),
+              ("mindet állító (t_all)", CATEGORICAL[0])]
+
+    def cond_of(si, cat):
+        return (baseline_id, tgt_by_cat[cat], broad)[si]
+
+    w = 0.26
+    fig, ax = plt.subplots(figsize=(1.7 * len(cats) + 2.6, 4.3))
+    allvals = []
+    for si, (label, col) in enumerate(series):
+        xs, vals = [], []
+        for ci, cat in enumerate(cats):
+            v = rate(cond_of(si, cat), cat)
+            xs.append(ci + (si - 1) * w)
+            vals.append(0.0 if v is None else v)
+            if v is not None:
+                allvals.append(v)
+                ax.text(ci + (si - 1) * w, v + 0.008, f"{100 * v:.0f}%", ha="center",
+                        va="bottom", fontsize=8, color=INK)
+        ax.bar(xs, vals, width=w, color=col, zorder=3, label=label)
+    xlabels = []
+    for cat in cats:
+        lab = CATEGORY_LABELS.get(cat, cat)
+        xlabels.append(f"{lab}\n({cond_id[tgt_by_cat[cat]]})" if tgt_by_cat[cat] else lab)
+    ax.set_xticks(range(len(cats)), xlabels)
+    ax.set_ylim(0, (max(allvals) if allvals else 0.1) * 1.22)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
+    ax.set_ylabel("a saját tool választási aránya")
+    ax.grid(axis="y", color=GRID, linewidth=0.8, zorder=0)
+    ax.set_axisbelow(True)
+    ax.tick_params(axis="x", length=0)
+    ax.legend(frameon=False, ncol=3, loc="lower left", bbox_to_anchor=(0, 1.0, 1, 0.1),
+              fontsize=8.5, handlelength=1, handleheight=1)
+    ax.set_title("Célzott állítás vs. „mondj el mindent” kérdéskategóriánként", pad=26)
+    fig.text(0.01, -0.03, "Minden kategóriában a baseline, a kategóriát célzó B-változat (zárójelben), "
+             "és a minden képességet egyszerre állító t_all összevetése.",
+             fontsize=8, color=MUTED, transform=fig.transFigure)
+    return _save(fig, out_dir, "7_celzott_vs_szeles.png")
+
+
 # --- Belépési pont ---------------------------------------------------------------
 def make_all(rows, out_dir, variants_path=None, baseline_id="baseline"):
     _style()
@@ -400,10 +537,15 @@ def make_all(rows, out_dir, variants_path=None, baseline_id="baseline"):
 
     own = [r for r in rows if r.get("own_block_position") is not None]
     if own and any(r["condition"] == baseline_id for r in own):
-        targets = {}
+        targets, labels = {}, {}
         if variants_path and Path(variants_path).exists():
             v = json.loads(Path(variants_path).read_text(encoding="utf-8"))
-            targets = {x["id"]: x.get("target_category") for x in v.get("description_variants", [])}
+            targets = {x["id"]: x.get("target_category") for x in v.get("description_variants", [])
+                       if x.get("family") != "ABL"}
+            labels = {x["id"]: "nélküle: " + x.get("feature_label", x.get("feature", x["id"]))
+                      for x in v.get("description_variants", []) if x.get("family") == "ABL"}
         made.append(plot_paired_overall(own, out_dir, baseline_id))
         made.append(plot_paired_by_category(own, out_dir, targets, baseline_id))
+        made.append(plot_ablation(own, out_dir, labels))
+        made.append(plot_targeted_vs_broad(own, out_dir, targets, baseline_id))
     return [p for p in made if p]

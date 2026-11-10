@@ -24,7 +24,7 @@
   },
   "seed": 42,
   "name": "anon_family_B",
-  "_comment": "Anonimizált kar: minden kereső tool neve 'web_search', a szerverek kérdésenként véletlen álnevet kapnak (server_aliases), a leírásokból a márkautalások ki vannak cserélve (anonymize_tools.py, anon_replacements.json). Az A és B család közös eredményfájlba ír, közös baseline-nal; a közös beállításokat ne módosítsd külön-külön.",
+  "_comment": "Anonimizált kar: minden kereső tool neve 'web_search', a szerverek kérdésenként véletlen álnevet kapnak (server_aliases), a leírásokból a márkautalások ki vannak cserélve (anonymize_tools.py, anon_replacements.json). Az A és B család közös eredményfájlba ír, közös baseline-nal; a közös beállításokat ne módosítsd külön-külön. A B család kérdésenként csak 3 sorrendet használ az 5-ből (rotations: 3 -> a kérdésenként kevert alapsorrend 0., 2. és 3. eltolása); ezek a baseline 5 sorrendjének részhalmazai, így a már lefutott baseline-nal párosíthatók, és a kiválasztás a seed miatt reprodukálható.",
   "output": "results/anon_gemini-3.6-flash.jsonl",
   "servers": {
     "brave": "clean_anon/brave_anon.json",

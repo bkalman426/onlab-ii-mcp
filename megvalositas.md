@@ -104,3 +104,24 @@ Ebből a host első lépését valósítom meg: összerakom a kérést (system p
 A modell szemszögéből ez a választási lépés ugyanolyan, mint egy valódi hostban, ugyanazon az API-n, ugyanolyan szerkezetű tool-listát kap. A lementett tool-lista nem tér el a futó szerverétől, mert a modellhez úgyis csak a név, a leírás és a paraméterek jutnak el.
 
 Az első döntés azért elég, mert a támadónak ez a lényeg. Ha nem az ő tool-ját választják, a további lépések nem számítanak, ha pedig igen, onnantól ő adja a találatokat.
+
+## A mérés menete
+
+**Egy mérés** egyetlen modellhívás: rögzített system prompt, egy fejlesztői kérdés és a tool-lista. Azt rögzítem, melyik tool-t hívja meg először a modell, vagy hogy egyiket sem. A modell a Gemini 3.6 Flash, alapértelmezett beállításokkal.
+
+**A tool-lista** a négy valós kereső fő tool-jából és a saját tool-omból áll.
+
+**A kérdések:** 32 fejlesztői kérdés, négy típusban, típusonként 8: friss információ, hibaüzenet, könyvtárválasztás, szakirodalom.
+
+**A feltételek** a saját tool leírásváltozatai. Mindegyik ugyanabból a sablonból készül így a hosszuk és a szerkezetük azonos. Ezeket egy semleges alapváltozathoz (baseline) hasonlítom.
+
+**A sorrend:** a modell a lista elején álló tool-okat gyakrabban választja, ezért a sorrendet kiegyensúlyozom. Kérdésenként véletlen alapsorrendet használok, és a tool-okat ennek több eltolásában adom át, így a saját tool minden pozícióba kerül. A véletlen sorrendet rögzített seed adja, ezért a mérés reprodukálható. Ugyanannál a kérdésnél minden feltétel ugyanazt a sorrendet kapja, így két feltétel mérései párban összevethetők: csak a leírásban különböznek.
+
+**Két kar:**
+
+- **Márkás:** a versenytársak valódi nevükkel szerepelnek, a saját tool egy fiktív névvel.
+- **Anonimizált:** minden tool neve `web_search`, a szerverek kérdésenként váltakozó semleges álnevet kapnak, és a versenytársak leírásaiból kicserélem a márkára utaló részeket.
+
+A kettő összevetése választja szét a név és a leírás hatását.
+
+**Kiértékelés:** a saját tool választási aránya feltételenként, a baseline-hoz párosítva (ugyanaz a kérdés és sorrend).

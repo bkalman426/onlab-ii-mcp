@@ -1,0 +1,36 @@
+{
+  "_comment": [
+    "Feature ablation: egy hatásos leírásváltozat slot-mondatát részekre (feature-ökre) bontjuk,",
+    "és mindegyikből készül egy változat, amelyből az adott rész hiányzik. A kitakart változatot",
+    "a teljes ('szülő') változathoz hasonlítjuk párosítva: a különbség az adott rész hozzájárulása.",
+    "Kitakarás módja: a rész kihagyása, minimális nyelvtani javítással (a 'find' szöveget a",
+    "'replace' váltja fel). A 'find'-nak pontosan egyszer kell szerepelnie a szülő slot-mondatában.",
+    "condition_id: a konfigurációban ezen az azonosítón fut; formátuma ABL__<szülő feltétel>__<feature>."
+  ],
+  "ablations": [
+    {
+      "parent_variant": "authoritative",
+      "parent_condition": "A_authoritative",
+      "features": [
+        {"id": "no_endorser", "label": "„Recommended by developers and researchers”",
+         "find": "Recommended by developers and researchers as a reliable source", "replace": "A reliable source"},
+        {"id": "no_reliable", "label": "„as a reliable source”",
+         "find": " as a reliable source for", "replace": " for"},
+        {"id": "no_domain", "label": "„for technical questions”",
+         "find": " for technical questions.", "replace": "."}
+      ]
+    },
+    {
+      "parent_variant": "t_fresh",
+      "parent_condition": "B_t_fresh",
+      "features": [
+        {"id": "no_refresh", "label": "„The index is refreshed continuously”",
+         "find": "The index is refreshed continuously, so results include", "replace": "Results include"},
+        {"id": "no_content", "label": "„release notes and changelogs”",
+         "find": "release notes and changelogs published", "replace": "pages published"},
+        {"id": "no_recency", "label": "„published minutes ago”",
+         "find": " published minutes ago.", "replace": "."}
+      ]
+    }
+  ]
+}

@@ -88,7 +88,126 @@ def paired_vs_baseline(own_rows, cats, baseline_id="baseline"):
         print(line)
 
 
-def main(path):
+def ablation_pairs(rows, cond):
+    """Feature ablation: a kitakart változat (ABL__<szülő>__<feature>) párjai a szülővel.
+    Visszaad: [(szülő választotta, kitakart választotta, kategória)], ugyanazon kérdés/sorrend/ismétlés."""
+    parent = cond.split("__")[1]
+
+    def key(r):
+        return (r["model"], r["query_id"], r["rotation"], r["repeat"])
+    par = {key(r): r["selected_own"] for r in rows if r["condition"] == parent}
+    return [(par[key(r)], r["selected_own"], r["category"]) for r in rows
+            if r["condition"] == cond and key(r) in par]
+
+
+def paired_ablation(own_rows, cats):
+    """Az egyes feature-ök hozzájárulása: szülő − kitakart (párosítva).
+    Pozitív érték: a rész növeli a saját tool választását (nélküle ritkábban választja)."""
+    conds = sorted({r["condition"] for r in own_rows if r["condition"].startswith("ABL__")})
+    if not conds:
+        return
+    try:
+        from scipy.stats import binomtest
+    except ImportError:
+        binomtest = None
+
+    def stats(pairs):
+        n = len(pairs)
+        b = sum(1 for p, a, *_ in pairs if p and not a)   # csak a szülőnél választotta
+        c = sum(1 for p, a, *_ in pairs if a and not p)   # csak a kitakartnál
+        d = (b - c) / n if n else 0.0
+        p = binomtest(b, b + c, 0.5).pvalue if (binomtest and b + c) else None
+        return n, b, c, d, p
+
+    print("\nFeature ablation: az egyes részek hozzájárulása (szülő − kitakart, párosítva)")
+    print(f"{'szülő':<18}{'kitakart rész':<16}{'párok':>6}{'szülő':>8}{'kitakart':>10}{'hozzájárulás':>14}"
+          f"{'+':>5}{'-':>5}{'p':>10}")
+    for cond in conds:
+        _, parent, feat = cond.split("__")
+        pairs = ablation_pairs(own_rows, cond)
+        if not pairs:
+            continue
+        n, b, c, d, p = stats(pairs)
+        rp = sum(x[0] for x in pairs) / n
+        ra = sum(x[1] for x in pairs) / n
+        p_txt = f"{p:.3g}" if p is not None else "-"
+        print(f"{parent:<18}{feat:<16}{n:>6}{100 * rp:>7.1f}%{100 * ra:>9.1f}%{100 * d:>+11.1f} pp"
+              f"{b:>5}{c:>5}{p_txt:>10}")
+    print("  +: csak a teljes (szülő) változatnál választotta a saját tool-t, -: csak a kitakartnál")
+
+    print("\nHozzájárulás kérdéskategóriánként (százalékpont; * = p < 0,05)")
+    print(f"{'kitakart változat':<36}" + "".join(f"{c:>11}" for c in cats))
+    for cond in conds:
+        line = f"{cond[5:]:<36}"
+        all_pairs = ablation_pairs(own_rows, cond)
+        for cat in cats:
+            pairs = [x for x in all_pairs if x[2] == cat]
+            if not pairs:
+                line += f"{'-':>11}"
+                continue
+            n, b, c, d, p = stats(pairs)
+            star = "*" if (p is not None and p < 0.05) else " "
+            line += f"{100 * d:>+9.1f}{star} "
+        print(line)
+
+
+def paired_specificity(own_rows, targets, cats, baseline_id="baseline"):
+    """Specifikusság: a célzott kategóriában mért párosított hatás mínusz a nem-célzott
+    kategóriák átlagos hatása. Nagy érték = 'sebészi' (szinte csak a célzottban emel);
+    0 körül = általános emelő (mindenhol hasonlóan hat). Külön kiírja a célzó változat és
+    a mindent állító t_all hatását is kategóriánként."""
+    def key(r):
+        return (r["model"], r["query_id"], r["rotation"], r["repeat"])
+    base = {key(r): r["selected_own"] for r in own_rows if r["condition"] == baseline_id}
+    if not base:
+        return
+
+    def delta(cond, cat):
+        pairs = [(r["selected_own"], base[key(r)]) for r in own_rows
+                 if r["condition"] == cond and r["category"] == cat and key(r) in base]
+        if not pairs:
+            return None
+        b = sum(1 for v, s in pairs if v and not s)
+        c = sum(1 for v, s in pairs if s and not v)
+        return 100 * (b - c) / len(pairs)
+
+    cond_target, cond_id = {}, {}
+    for r in own_rows:
+        cond_target.setdefault(r["condition"], targets.get(r["own_description"]))
+        cond_id.setdefault(r["condition"], r["own_description"])
+
+    single = [(c, t) for c, t in cond_target.items() if t in cats]  # a t_all ('all') kimarad
+    if not single:
+        return
+
+    print("\nSpecifikusság: célzott hatás − az átlagos nem-célzott hatás (párosított, pp)")
+    print(f"{'változat':<16}{'célzott kat.':<12}{'célzott Δ':>11}{'nem-célz. átlag':>17}{'specifikusság':>15}")
+    for cond, tgt in sorted(single, key=lambda x: cond_id[x[0]]):
+        dt = delta(cond, tgt)
+        others = [o for o in (delta(cond, c) for c in cats if c != tgt) if o is not None]
+        if dt is None or not others:
+            continue
+        mo = sum(others) / len(others)
+        print(f"{cond_id[cond]:<16}{tgt:<12}{dt:>+9.1f}{mo:>+16.1f}{dt - mo:>+14.1f}")
+    print("  Nagy specifikusság = sebészi (csak a célzottban emel); 0 körül = általános emelő.")
+
+    broad = next((c for c, t in cond_target.items() if t == "all"), None)
+    if broad:
+        print("\nCélzott vs. széles (t_all) kérdéskategóriánként — párosított hatás a baseline-hoz (pp)")
+        print(f"{'kategória':<12}{'célzó változat':>16}{'célzott Δ':>11}{'t_all Δ':>10}")
+        for cat in cats:
+            cands = [c for c, t in cond_target.items() if t == cat]
+            cands.sort(key=lambda c: (not cond_id[c].startswith("t_"), c))
+            if not cands:
+                continue
+            tc = cands[0]
+            dt, da = delta(tc, cat), delta(broad, cat)
+            dt_s = f"{dt:+.1f}" if dt is not None else "-"
+            da_s = f"{da:+.1f}" if da is not None else "-"
+            print(f"{cat:<12}{cond_id[tc]:>16}{dt_s:>11}{da_s:>10}")
+
+
+def main(path, variants_path="variants.json"):
     rows = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
     ok = [r for r in rows if r["status"] == "ok"]
     errors = [r for r in rows if r["status"] != "ok"]
@@ -208,7 +327,20 @@ def main(path):
                 line += f"{pct(sum(r['selected_own'] for r in rs), len(rs)):>11}"
             print(line)
 
+        targets = {}
+        try:
+            from pathlib import Path as _Path
+            if variants_path and _Path(variants_path).exists():
+                vj = json.loads(_Path(variants_path).read_text(encoding="utf-8"))
+                targets = {x["id"]: x.get("target_category")
+                           for x in vj.get("description_variants", []) if x.get("family") != "ABL"}
+        except Exception:
+            targets = {}
+
         paired_vs_baseline(own_rows, cats)
+        if targets:
+            paired_specificity(own_rows, targets, cats)
+        paired_ablation(own_rows, cats)
 
     tokens =[r["usage"].get("input") for r in ok if r.get("usage") and r["usage"].get("input")]
     if tokens:
@@ -228,7 +360,7 @@ if __name__ == "__main__":
                     help="a saját tool változatai (a célzott kategóriák kiemeléséhez); alapértelmezés: variants.json")
     args = ap.parse_args()
 
-    main(args.results)
+    main(args.results, args.variants)
 
     if args.plots is not None:
         try:
