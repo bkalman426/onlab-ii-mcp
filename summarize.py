@@ -358,6 +358,16 @@ if __name__ == "__main__":
                          "(alapértelmezés: results/plots/<eredményfájl neve>/)")
     ap.add_argument("--variants", default="variants.json",
                     help="a saját tool változatai (a célzott kategóriák kiemeléséhez); alapértelmezés: variants.json")
+    ap.add_argument("--label", default=None,
+                    help="az eredményhalmaz neve az összevető ábrákon (alapértelmezés: a fájl neve)")
+    ap.add_argument("--compare", default=None,
+                    help="második eredményfájl az ábrákhoz (pl. márkanevekkel futtatott mérés): az első választás "
+                         "ábrája mindkettőt mutatja, és készül egy összevető ábra a saját tool arányáról")
+    ap.add_argument("--compare-label", default=None,
+                    help="a második eredményhalmaz neve (alapértelmezés: a fájl neve)")
+    ap.add_argument("--skip", default="",
+                    help="kihagyandó ábrák vesszővel elválasztva: pozicio, ablacio "
+                         "(az 'ablacio' az ablation-feltételeket az összes ábráról kiszűri)")
     args = ap.parse_args()
 
     main(args.results, args.variants)
@@ -367,11 +377,26 @@ if __name__ == "__main__":
             import plots
         except ImportError as e:
             raise SystemExit(f"Az ábrákhoz telepítsd a matplotlibot: pip install matplotlib  ({e})")
-        rows = [json.loads(l) for l in open(args.results, encoding="utf-8") if l.strip()]
-        ok_rows = [r for r in rows if r["status"] == "ok"]
+
+        def load_ok(path):
+            # Kulcsonként az utolsó sikeres mérés (az újrafuttatott mérések ne számítsanak kétszer).
+            rows = {}
+            for line in open(path, encoding="utf-8"):
+                if line.strip():
+                    r = json.loads(line)
+                    if r["status"] == "ok":
+                        rows[r["key"]] = r
+            return list(rows.values())
+
         res = Path(args.results)
         out_dir = Path(args.plots) if args.plots else res.parent / "plots" / res.stem
-        made = plots.make_all(ok_rows, out_dir, args.variants)
+        compare = None
+        if args.compare:
+            cmp_path = Path(args.compare)
+            compare = (args.compare_label or cmp_path.stem, load_ok(cmp_path))
+        skip = {s.strip() for s in args.skip.split(",") if s.strip()}
+        made = plots.make_all(load_ok(res), out_dir, args.variants, label=args.label or res.stem,
+                              compare=compare, skip=skip)
         print(f"\nÁbrák ({out_dir}):")
         for p in made:
             print(f"  {p.name}")
