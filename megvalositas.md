@@ -161,38 +161,67 @@ A kettő összevetése választja szét a név és a leírás hatását.
 
 ## Eredmények
 
-Feltételenként 160 mérés (32 kérdés × 5 sorrend). Véletlen választásnál a saját tool aránya ~20% lenne.
+Feltételenként 160 mérés (32 kérdés × 5 sorrend). Véletlen választásnál a saját tool aránya ~20% lenne. A két támadástípust külön mutatom be; mindkettőt ugyanahhoz a semleges baseline-hoz hasonlítom (anonimizálva 27,5%).
 
-![A saját tool választási aránya](results/plots/megvalositas/8_sajat_arany_beallitasok.png)
+### A család: meggyőző megfogalmazás
 
-_Olvasás:_ a sáv a saját tool választási aránya: az adott feltétel 160 méréséből hány százalékban hívta meg először a modell a saját tool-t (narancs: márkanevekkel, kék: anonimizálva), a vékony vonal a 95%-os intervallum, a szaggatott vonal a 20%-os véletlen szint. Csillag: szignifikáns eltérés a baseline-tól.
+![A saját tool választási aránya – A család](results/plots/megvalositas/A_csalad/8_sajat_arany_beallitasok.png)
 
-### Márkanevekkel
+_Olvasás:_ a sáv a saját tool választási aránya: az adott feltétel 160 méréséből hány százalékban hívta meg először a modell a saját tool-t (narancs: márkanevekkel, kék: anonimizálva), a vékony vonal a 95%-os intervallum, a szaggatott vonal a 20%-os véletlen szint. Csillag: szignifikáns eltérés a baseline-tól. A generikus név (C) csak márkanevekkel készült mérés, ezért szerepel itt.
 
-Ismert márkák mellett a fiktív nevű saját tool esélytelen: 800 mérésből (baseline és A család) egyszer választotta a modell, a leírástól függetlenül. Egyedül a generikus név (`web_search`) mozdít rajta: 6,9% (p = 0,001). A B családot itt nem mértem.
+#### Márkanevekkel
 
-![Melyik tool-t hívta először a modell](results/plots/megvalositas/1_elso_valasztas.png)
+Ismert márkák mellett a fiktív nevű saját tool esélytelen: 800 mérésből (baseline és A család) egyszer választotta a modell, a leírástól függetlenül. Egyedül a generikus név (`web_search`) mozdít rajta: 6,9% (p = 0,001).
+
+![Melyik tool-t hívta először a modell – A család](results/plots/megvalositas/A_csalad/1_elso_valasztas.png)
 
 _Olvasás:_ soronként 160 mérés megoszlása aszerint, hogy melyik tool-t hívta először a modell (szürke: egyiket sem). A számok a sor 160 méréséhez viszonyított százalékok, egy sor összesen 100%.
 
 Márkanevekkel a Tavily és a Brave viszi a döntések kb. 90%-át. Anonimizálva a Brave és az Exa szinte eltűnik, és a saját tool már semleges leírással is 27,5%-ot ér el. A modell tehát elsősorban a név alapján dönt.
 
-### Anonimizálva
+#### Anonimizálva
 
-![Hatás a baseline-hoz képest](results/plots/megvalositas/4_kulonbseg_baseline.png)
+![Hatás a baseline-hoz képest – A család](results/plots/megvalositas/A_csalad/4_kulonbseg_baseline.png)
 
 _Olvasás:_ a változat és az anonimizált baseline választási arányának különbsége százalékpontban (a baseline 27,5%, így pl. +20 pp = 47,5%), ugyanazon kérdéseken és sorrendeken párosítva. Ha az intervallum nem metszi a nullát, a hatás valószínűleg valódi.
 
-- **Meggyőző megfogalmazás:** a tekintélyre hivatkozás (+22 pp) és a túlzás (+24 pp) hat, a hangulatkeltés és az érzelmi ráhatás nem.
-- **Szempontok kiemelése:** a frissesség a legerősebb (+30 pp, 57,5%). A tudásbeli korlátra hivatkozás (+13 pp) és a kombinált változat (+12,5 pp) is szignifikáns. A többi célzott változat összesítve gyengébb, mert csak a kérdések negyedét célozza.
+A tekintélyre hivatkozás (+22 pp, 49,4%) és a túlzás (+24 pp, 51,9%) hat, az érzelmi ráhatás (+5 pp) és a hangulatkeltés (+0,6 pp) nem szignifikáns.
 
-![Saját tool választási aránya kérdéstípusonként](results/plots/megvalositas/3_kategoria.png)
+![Saját tool választási aránya kérdéstípusonként – A család](results/plots/megvalositas/A_csalad/3_kategoria.png)
 
-_Olvasás:_ egy cella azt mutatja, hogy az adott változat adott típusú kérdéseinél (40 mérés) hány százalékban választotta a modell a saját tool-t; minél sötétebb, annál gyakrabban. Egy sor celláinak nem kell 100%-ot kiadniuk, mert mindegyik a saját 40 méréséhez viszonyít. Keretezve a változat által célzott kérdéstípus.
+_Olvasás:_ egy cella azt mutatja, hogy az adott változat adott típusú kérdéseinél (40 mérés) hány százalékban választotta a modell a saját tool-t; minél sötétebb, annál gyakrabban. Egy sor celláinak nem kell 100%-ot kiadniuk, mert mindegyik a saját 40 méréséhez viszonyít.
+
+A hatásos változatok minden kérdéstípuson emelnek: a tekintélyre hivatkozás 17–30 pp-tal, a túlzás 12–35 pp-tal. Ez várható, hiszen a mondat egyik kérdéstípust sem célozza. A szakirodalmi kérdéseken a meggyőző megfogalmazás sem tudja behozni a hátrányt (legfeljebb 38%).
+
+### B család: szempontok kiemelése
+
+![A saját tool választási aránya – B család](results/plots/megvalositas/B_csalad/8_sajat_arany_beallitasok.png)
+
+_Olvasás:_ mint az A családnál (narancs: márkanevekkel, kék: anonimizálva). Márkanevekkel a B családból csak a legerősebb változatot, a frissességet mértem; a többinél „nem mértem” áll.
+
+#### Márkanevekkel
+
+Márkanevekkel már az A család sem mozdított a választáson, ezért itt csak a legerősebb B változatot, a frissességet mértem meg. Ez sem segít: a fiktív nevű saját tool 160 mérésből egyszer nyert (0,6%, a baseline-hoz képest nem szignifikáns), a Tavily és a Brave továbbra is a döntések kb. 90%-át viszi. Ugyanaz a mondat, amely anonimizálva 27,5%-ról 57,5%-ra emeli az arányt, ismert márkák mellett hatástalan.
+
+![Melyik tool-t hívta először a modell – B család](results/plots/megvalositas/B_csalad/1_elso_valasztas.png)
+
+_Olvasás:_ soronként 160 mérés megoszlása aszerint, hogy melyik tool-t hívta először a modell (szürke: egyiket sem), egy sor összesen 100%. Felül márkanevekkel, alul anonimizálva.
+
+#### Anonimizálva
+
+![Hatás a baseline-hoz képest – B család](results/plots/megvalositas/B_csalad/4_kulonbseg_baseline.png)
+
+_Olvasás:_ mint az A családnál: a különbség százalékpontban az anonimizált baseline-hoz (27,5%) képest, párosítva.
+
+A frissesség a legerősebb (+30 pp, 57,5%). A tudásbeli korlátra hivatkozás (+13 pp) és a kombinált változat (+12,5 pp) is szignifikáns. A többi célzott változat összesítve gyengébb, mert csak a kérdések negyedét célozza.
+
+![Saját tool választási aránya kérdéstípusonként – B család](results/plots/megvalositas/B_csalad/3_kategoria.png)
+
+_Olvasás:_ mint az A családnál; keretezve a változat által célzott kérdéstípus.
 
 A négy célzott változat erősen hat a saját kérdéstípusán (65–82%), a többin alig vagy egyáltalán nem; a tudásbeli korlátra hivatkozás gyengébb (48%). A legélesebb az akadémiai források esete: a szakirodalmi kérdéseken 8%-ról 82%-ra. A frissesség kivétel: szinte minden kérdéstípuson hat, csak a szakirodalmin nem.
 
-![Célzott állítás vs. kombinált változat](results/plots/megvalositas/7_celzott_vs_szeles.png)
+![Célzott állítás vs. kombinált változat](results/plots/megvalositas/B_csalad/7_celzott_vs_szeles.png)
 
 _Olvasás:_ kérdéstípusonként a baseline (szürke), a célzott változat (narancs) és a kombinált változat (kék). Az oszlop az adott kérdéstípus 40 méréséhez viszonyított arány: ennyi százalékban választotta a modell a saját tool-t.
 
@@ -214,7 +243,7 @@ Ha a tool-ok a valódi nevükkel szerepelnek, a modell az ismert márkát válas
 
 ## Védekezések
 
-A védekezések nem lett megmérve, így csak lehetőségekként merülnek fel.
+A parafrázist megmértem, a BM25-alapú kiválasztást a meglévő adatokon szimuláltam; a másik kettő egyelőre csak lehetőségként szerepel.
 
 ### Parafrázis
 
@@ -222,6 +251,60 @@ A host a választás előtt egy külön modellhívással tárgyilagosra íratja 
 
 - **Előny:** olcsó, mert a leírások statikusak, így munkamenetenként egyszer kell átírni őket. A host többi része nem változik.
 - **Hátrány:** várhatóan csak a meggyőző megfogalmazás ellen véd. A szempontok kiemelését az átírás lényeges információként megtart. A nevet nem érinti, és az átíró modell maga is torzíthat.
+
+#### Mérés
+
+Az anonimizált beállítást ismételtem meg úgy, hogy minden leírást (a versenytársakét és a sajátomét is) tool-onként, egymástól függetlenül átírattam a Gemini 3.6 Flash-sel, majd a modell az átírt listából választott. A feltételek: a baseline, az A család két hatásos változata (tekintélyre hivatkozás, túlzás) és a B család két legerősebb változata (frissesség, akadémiai források), feltételenként 160 mérés, ugyanazokkal a kérdésekkel, sorrendekkel és álnevekkel, mint védekezés nélkül. Mindkét futásban a saját baseline-hoz viszonyítok, párosítva.
+
+![A parafrázis hatása](results/plots/vedekezes/9_parafrazis.png)
+
+_Olvasás:_ a sáv a változat hatása a saját baseline-hoz képest százalékpontban (szürke: védekezés nélkül, kék: parafrázissal), a vonal a 95%-os intervallum. A meggyőző változatoknál az összes kérdésen, a célzott változatoknál a célzott kérdéstípuson mérve.
+
+Az átíró a meggyőző mondatot egyszerűen kihagyta: a tekintélyre hivatkozó és a túlzó változatból a baseline-nal szinte azonos leírás lett. A célzott állításokat viszont tényként megtartotta, csak semlegesebben fogalmazta meg (pl. „The index is continuously refreshed, allowing results to include release notes and changelogs published minutes prior.”).
+
+- **Meggyőző megfogalmazás:** a hatás eltűnik. A tekintélyre hivatkozás +22 pp-ról −3 pp-ra, a túlzás +24 pp-ról −4 pp-ra esik; parafrázissal egyik sem tér el szignifikánsan a baseline-tól.
+- **Szempontok kiemelése:** a hatás marad. A frissesség a friss kérdéseken +42 pp helyett +40 pp, az akadémiai források a szakirodalmi kérdéseken +75 pp helyett +70 pp; mindkettő továbbra is erősen szignifikáns (p < 0,001). Összesítve a frissesség +30 pp-ról +21 pp-ra csökken, de így is szignifikáns.
+- **A baseline is elmozdul:** a semleges saját tool aránya 27,5%-ról 38,1%-ra nő (p = 0,014). Az átírás a versenytársak leírásaiból is kiveszi a reklámszöveget, és ezzel a semleges saját tool relatív helyzete javul. A védekezés tehát nem csak a támadót gyengíti, hanem a versenytársak közötti arányokat is átrendezi.
+
+Röviden: a parafrázis a meggyőző megfogalmazás ellen hatékony, a szempontok kiemelése ellen nem, ahogy várható volt. Egy tényként megfogalmazott, de hamis képességállítást az átíró nem tud megkülönböztetni egy valóditól, ezért változatlanul továbbadja.
+
+### BM25-alapú kiválasztás (LLM nélkül)
+
+A host nem modellel, hanem a klasszikus szövegkeresés BM25 pontozásával választ: minden tool leírását dokumentumnak, a kérdést keresőkérdésnek tekinti, és a szóegyezések alapján pontoz. Egy szó annál többet ér, minél ritkább a többi leírásban (a mindenhol szereplő „search” szinte semmit), az ismétlés egyre kevesebbet hoz, a hosszú leírás hátrányt kap. A jelentést nem érti, csak a közös szavakat látja.
+
+- **Előny:** nincs benne LLM, olcsó, és a kérdésben nem szereplő minősítő szavakra („reliable”, „exceptionally accurate”) nem ad pontot.
+- **Hátrány:** a kérdés szavaival egyező tényállítást jutalmazza, és kulcsszóhalmozással kijátszható. Gyenge kiválasztó is: a jelentést nem érti, a hosszú, szógazdag leírásokat kedveli.
+
+#### Mérés
+
+Mérés helyett szimuláció: az anonimizált kar minden kérdésére és változatára kiszámoltam, mit választana egy BM25-host az öt tool (négy versenytárs és a saját) leírása és paraméterleírásai alapján. Két döntési szabályt néztem:
+
+- **a legjobb pontszám nyer** (argmax);
+- **sorsolás a legjobb 80%-át elérők között** (0,8 × max): a legjobbhoz közeli tool-ok egyenlő eséllyel kapják a kérdést.
+
+A BM25-host determinisztikus, ezért itt a választási arány várható érték: kérdésenként kiszámoltam, mekkora eséllyel kapja a saját tool a kérdést (holtversenynél és sorsolásnál egyenlő eséllyel osztozva), és ezt átlagoltam. A bizonytalanság a kis kérdésmintából adódik (kérdéstípusonként 8 kérdés, egy kérdés 12,5 pp).
+
+![LLM vs. BM25-host](results/plots/vedekezes/11_llm_vs_bm25.png)
+
+_Olvasás:_ a sáv a változat hatása a saját baseline-hoz képest százalékpontban (szürke: LLM, mért; zöld: BM25, a legjobb pontszám nyer; borostyán: BM25, sorsolás a legjobb 80%-át elérők között). A vonal a 95%-os intervallum (BM25-nél bootstrap a kérdésekre). A saját tool BM25 alatt már semleges leírással is csak 3,8%-ot kap, mert a rövid leírás kevés szóval illeszkedik, ezért a különbség az érdekes, nem a szint.
+
+- **Meggyőző megfogalmazás:** a hatás szinte eltűnik. A túlzás hatása pontosan 0, mert a szavai egyik kérdésben sem szerepelnek; a tekintélyre hivatkozás +6 pp-t hoz, mert a „developers” és a „technical” véletlenül illeszkedik.
+- **Szempontok kiemelése:** ott hat, ahol a kérdés ugyanazokat a szavakat használja. A fejlesztői források (+38 pp) és az összehasonlító adatok (+25 pp) annyit hoznak, mint az LLM-nél; a frissesség és az akadémiai források csak +12 pp-t, mert a kérdésekben ritkán szerepel a „changelog” vagy az „arXiv”.
+- **A sorsolás a támadónak segíthet:** ahol a saját tool közel második, a 0,8 × max szabály bejuttatja a sorsolásba (fejlesztői források +44 pp, összehasonlító adatok +31 pp).
+
+#### Plafon
+
+Kipróbáltam azt is, hogy a host levágja-e a gyanúsan kiugró pontszámot. A plafon kérdésenként a többi tool átlagos pontszámának k-szorosa (a legjobb pontszám nélkül számolva, így egy kiugró tool nem tudja felhúzni). A host a plafont elérők közül egyenletesen sorsol; ha senki nem éri el, a legjobb nyer. Nagy k-nál ez az argmax, kis k-nál közel egyenletes sorsolás.
+
+![A plafon ára](results/plots/vedekezes/12_plafon_tradeoff.png)
+
+_Olvasás:_ vízszintesen az ár: a támadás nélküli (baseline) kérdések hány százalékát kapja továbbra is a legjobb pontszámú tool (jobbra olcsóbb). Függőlegesen a haszon: a négy célzott változat átlagos várható aránya a saját kérdéstípusán (lejjebb jobb). A narancs görbe a plafon különböző k értékekkel; a fekete rombusz az argmax, a borostyán négyzet a 0,8 × max szabály. Jó védekezés a jobb alsó sarokban lenne.
+
+- **Nincs ingyenes beállítás:** a célzott arány csak k ≈ 2-nél esik 26%-ról 20% körülire, de ott a becsületes kérdések 31%-a már nem a legjobb találathoz kerül. Szigorúbb plafon a támadást nem csökkenti tovább, csak az ár nő.
+- **A 0,8 × max mindkét szempontból rosszabb, mint az argmax:** drágább (87%), és a támadó is többet kap (30%).
+- A görbe a kis minta miatt lépcsős; az irányát érdemes nézni, nem az egyes ugrásokat.
+
+Röviden: a BM25 a meggyőző megfogalmazást eleve figyelmen kívül hagyja, a célzott tényállítást viszont jutalmazza, ha a kérdés ugyanazokat a szavakat használja. A plafon ezt csak a jogos relevancia rovására tudja elvenni, mert a célzott állítás a pontszámban valódi illeszkedésnek látszik. Ugyanaz a kép, mint a parafrázisnál: a szöveg vagy a pontszám alapján működő védekezés a tényállítás ellen nem elég.
 
 ### Szűrés + random választás
 
