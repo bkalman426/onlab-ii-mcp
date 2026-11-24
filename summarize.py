@@ -368,6 +368,9 @@ if __name__ == "__main__":
     ap.add_argument("--skip", default="",
                     help="kihagyandó ábrák vesszővel elválasztva: pozicio, ablacio "
                          "(az 'ablacio' az ablation-feltételeket az összes ábráról kiszűri)")
+    ap.add_argument("--family", default="",
+                    help="csak a baseline és a megadott családok feltételei kerülnek az ábrákra, vesszővel "
+                         "elválasztva (pl. A,C vagy B)")
     args = ap.parse_args()
 
     main(args.results, args.variants)
@@ -396,7 +399,8 @@ if __name__ == "__main__":
             compare = (args.compare_label or cmp_path.stem, load_ok(cmp_path))
         skip = {s.strip() for s in args.skip.split(",") if s.strip()}
         made = plots.make_all(load_ok(res), out_dir, args.variants, label=args.label or res.stem,
-                              compare=compare, skip=skip)
+                              compare=compare, skip=skip,
+                              families={f.strip() for f in args.family.split(",") if f.strip()} or None)
         print(f"\nÁbrák ({out_dir}):")
         for p in made:
             print(f"  {p.name}")

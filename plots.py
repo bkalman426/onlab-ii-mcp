@@ -136,6 +136,13 @@ def _label(cond):
     return COND_LABELS.get(cond, _short(cond))
 
 
+def _footnote(ax, text, below_pt=40):
+    """Lábjegyzet a tengely alá, rögzített (pontban mért) távolságra, hogy az ábra magasságától
+    függetlenül ne csússzon rá a tengelyfeliratra."""
+    ax.annotate(text, xy=(0.01, 0), xycoords=("figure fraction", "axes fraction"), xytext=(0, -below_pt),
+                textcoords="offset points", ha="left", va="top", fontsize=8, color=MUTED, annotation_clip=False)
+
+
 def _save(fig, out_dir, name):
     path = out_dir / name
     fig.savefig(path, dpi=200, bbox_inches="tight")
@@ -162,7 +169,8 @@ def plot_choice_share(panels, out_dir):
 
     conds_per = [_cond_order({r["condition"] for r in rows}) for _, rows in panels]
     heights = [0.42 * len(c) + 0.5 for c in conds_per]
-    fig, axes = plt.subplots(len(panels), 1, figsize=(9, sum(heights) + 1.3), sharex=True, squeeze=False,
+    fig_h = sum(heights) + 1.3
+    fig, axes = plt.subplots(len(panels), 1, figsize=(9, fig_h), sharex=True, squeeze=False,
                              gridspec_kw={"height_ratios": heights})
     for ax, (title, rows), conds in zip(axes[:, 0], panels, conds_per):
         for y, cond in enumerate(conds):
@@ -192,7 +200,9 @@ def plot_choice_share(panels, out_dir):
     handles = [Rectangle((0, 0), 1, 1, color=colors[s]) for s in order] + [Rectangle((0, 0), 1, 1, color=NONE_COLOR)]
     fig.legend(handles, [names[s] for s in order] + ["nincs hívás"], ncol=len(handles), frameon=False,
                loc="lower left", bbox_to_anchor=(0.01, 1.0), fontsize=8.5, handlelength=1, handleheight=1)
-    fig.suptitle("Melyik tool-t hívta először a modell", x=0.01, y=1.06, ha="left", fontsize=11, fontweight="bold")
+    # a cím a jelmagyarázat fölött rögzített (hüvelykben mért) távolságra, az ábra magasságától függetlenül
+    fig.suptitle("Melyik tool-t hívta először a modell", x=0.01, y=1 + 0.42 / fig_h, ha="left", fontsize=11,
+                 fontweight="bold")
     fig.tight_layout()
     return _save(fig, out_dir, "1_elso_valasztas.png")
 
@@ -411,8 +421,7 @@ def plot_paired_overall(own, out_dir, baseline_id="baseline"):
         handles = [Rectangle((0, 0), 1, 1, color=FAMILY_COLORS[f]) for f in fams]
         ax.legend(handles, [FAMILY_NAMES.get(f, f) for f in fams], ncol=len(fams), frameon=False,
                   loc="lower left", bbox_to_anchor=(0, 1.0, 1, 0.1), fontsize=8.5, handlelength=1, handleheight=1)
-    fig.text(0.01, -0.02, "Vonal: 95%-os konfidenciaintervallum.  * = p < 0,05 (McNemar-próba, egzakt).",
-             fontsize=8, color=MUTED, transform=fig.transFigure)
+    _footnote(ax, "Vonal: 95%-os konfidenciaintervallum.  * = p < 0,05 (McNemar-próba, egzakt).")
     return _save(fig, out_dir, "4_kulonbseg_baseline.png")
 
 
@@ -513,9 +522,8 @@ def plot_ablation(own, out_dir, labels):
         handles = [Rectangle((0, 0), 1, 1, color=FAMILY_COLORS[f]) for f in fams]
         ax.legend(handles, [FAMILY_NAMES.get(f, f) for f in fams], ncol=len(fams), frameon=False,
                   loc="lower left", bbox_to_anchor=(0, 1.0, 1, 0.1), fontsize=8.5, handlelength=1, handleheight=1)
-    fig.text(0.01, -0.02, "Párosítva a teljes (szülő) változattal, ugyanazon kérdés és sorrend mellett. "
-             "Vonal: 95%-os intervallum.  * = p < 0,05 (McNemar, egzakt).", fontsize=8, color=MUTED,
-             transform=fig.transFigure)
+    _footnote(ax, "Párosítva a teljes (szülő) változattal, ugyanazon kérdés és sorrend mellett. "
+              "Vonal: 95%-os intervallum.  * = p < 0,05 (McNemar, egzakt).")
     return _save(fig, out_dir, "6_ablacio.png")
 
 
@@ -678,13 +686,28 @@ def plot_own_rate_compare(panels, out_dir, baseline_id="baseline"):
 
 
 # --- Belépési pont ---------------------------------------------------------------
-def make_all(rows, out_dir, variants_path=None, baseline_id="baseline", label=None, compare=None, skip=()):
+def make_all(rows, out_dir, variants_path=None, baseline_id="baseline", label=None, compare=None, skip=(),
+             families=None):
     """rows: a fő eredményhalmaz. compare: opcionális (név, sorok) egy második halmazhoz
     (pl. a márkanevekkel futtatott mérés); ekkor az 1. ábra mindkettőt mutatja, és elkészül a 8. ábra.
-    skip: kihagyandó ábrák ("pozicio", "ablacio")."""
+    skip: kihagyandó ábrák ("pozicio", "ablacio").
+    families: ha meg van adva (pl. {"A", "C"}), csak a baseline és ezen családok feltételei kerülnek
+    az ábrákra (az ablation-feltételek a szülőjük családjával együtt). Ha a második halmazban így
+    csak a baseline marad, az összevetés elmarad."""
     _style()
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if families:
+        def keep(c):
+            if c == baseline_id:
+                return True
+            if c.startswith("ABL__"):
+                c = c.split("__")[1]
+            return _family(c) in families
+        rows = [r for r in rows if keep(r["condition"])]
+        if compare:
+            cmp_rows = [r for r in compare[1] if keep(r["condition"])]
+            compare = (compare[0], cmp_rows) if any(r["condition"] != baseline_id for r in cmp_rows) else None
     if "ablacio" in skip:
         rows = [r for r in rows if not r["condition"].startswith("ABL__")]
         if compare:
